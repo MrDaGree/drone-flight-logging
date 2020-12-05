@@ -4,7 +4,7 @@ from flight import Flight
 
 class Flights():
 
-    flightsSaveLocation = "S:\_Drone\IL\Carpentersville, IL"
+    flightsSaveLocation = "S:\_Drone\Hobby"
 
     flights = {}
 
@@ -15,3 +15,12 @@ class Flights():
 
     def getFlights(self):
         return self.flights
+
+    def getFlightLocations(self):
+        locations = []
+        for flight in self.getFlights():
+            flight_location = self.getFlights()[flight].getLocationName()
+            if flight_location not in locations:
+                locations.append(flight_location)
+
+        return locations

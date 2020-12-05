@@ -13,10 +13,15 @@ window_width = 1220
 window_height = 700
 
 currentViewingFlightData = {}
+currentSelectedLocations = {}
 
 def loadFlightData():
     global flights
     flights = Flights()
+
+    for location in flights.getFlightLocations():
+        if not location in currentSelectedLocations:
+            currentSelectedLocations[location] = True
 
 def loadImage(imgPath):
     image = pygame.image.load(imgPath)
@@ -42,12 +47,18 @@ def mainMenuBar():
             imgui.menu_item('Close')
             imgui.end_menu()
 
+        if imgui.begin_menu('Locations'):
+            for location in flights.getFlightLocations():
+                click, state = imgui.menu_item(location, selected=currentSelectedLocations[location])
+
+                if click:
+                    currentSelectedLocations[location] = not currentSelectedLocations[location]
+            imgui.end_menu()
+
         imgui.end_menu_bar()
 
 def handlePhotoPreviewButtonClick(path, photo):
-    if imgui.button("Preview (" + photo + ")"):
-        
-        print(photo)
+    if imgui.button("Preview##" + photo):
         img, width, height = loadImage(os.path.join(path, "photos", photo))
         currentViewingFlightData["preview"] = {}
         currentViewingFlightData["preview"]['image'] = img
@@ -55,6 +66,12 @@ def handlePhotoPreviewButtonClick(path, photo):
         currentViewingFlightData["preview"]['height'] = height
 
 def photosDropDown(flight):
+    if imgui.tree_node("Raw ##" + str(flight.id)):
+        for raw in flight.getFlightMedia().raw:
+            imgui.text(raw)
+
+        imgui.tree_pop()
+
     if imgui.tree_node("Photos ##" + str(flight.id)):
         for photo in flight.getFlightMedia().images:
             imgui.text(photo)
@@ -63,16 +80,27 @@ def photosDropDown(flight):
                 
         imgui.tree_pop()
 
+    if imgui.tree_node("Videos ##" + str(flight.id)):
+        for video in flight.getFlightMedia().video:
+            imgui.text(video)
+
+        imgui.tree_pop()
+
 def flightDropDown(flight_name, flight):
-    expanded, _ = imgui.collapsing_header(flight_name + "##" + str(flight.id))
+    expanded, _ = imgui.collapsing_header(flight.getLocationName() + " (" + flight.getFlightDate() + ")##" + str(flight.id))
 
     if expanded:
-        imgui.text("Flight Time: " + flight.getFlightTime())
+        imgui.text("Flight Time: " + str(flight.getFlightTime()) + "h")
         imgui.same_line()
-        imgui.text(" | Batteries Used: " + flight.getBatteriesUsed())
+        imgui.text("| Batteries Used: " + str(flight.getBatteriesUsed()))
         imgui.text("Location: " + flight.getLocationName())
+        imgui.text("Flight has Panorama: " + str(flight.media.flightHasPanoramas))
+        imgui.separator()
+        if imgui.button("Open in File Browser"):
+            os.startfile(flight.flight_directory)
         imgui.spacing()
         photosDropDown(flight)
+        imgui.spacing()
 
 def main():
     loadFlightData()
@@ -106,7 +134,9 @@ def main():
         imgui.begin_child("flight_selector", width=window_width/5*2, border=True)
 
         for flight in flights.getFlights():
-            flightDropDown(flight, flights.getFlights()[flight])
+            flight_data = flights.getFlights()[flight]
+            if currentSelectedLocations[flight_data.getLocationName()]:
+                flightDropDown(flight, flight_data)
 
         imgui.end_child()
 

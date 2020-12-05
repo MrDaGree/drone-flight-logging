@@ -32,5 +32,8 @@ class Flight():
     def getLocationName(self):
         return self.raw_flight_data["location_name"]
 
+    def getFlightDate(self):
+        return self.raw_flight_data["date"]
+
     def getFlightMedia(self):
         return self.media
